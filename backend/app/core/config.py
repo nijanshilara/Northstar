@@ -49,6 +49,7 @@ class Settings(BaseSettings):
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM: str = ""
+    SMTP_FROM_NAME: str = "Northstar Travel"
 
     # ---------------------------------------------------------------------------
     # Derived helpers

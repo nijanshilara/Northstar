@@ -7,14 +7,15 @@ import {
 } from 'lucide-react'
 import { listTrips, seedDemoData, getErrorMessage, getItineraryBudget, type BudgetBreakdown } from '../services/api'
 import type { Trip } from '../types'
-import { formatMoney, formatDate, daysUntil, STATUS_CLASSES } from '../utils/format'
+import { formatDate, daysUntil, STATUS_CLASSES } from '../utils/format'
+import CurrencyAmount from '../components/CurrencyAmount'
 
 // ── Stat Card ──────────────────────────────────────────────────────────────
 
 function StatCard({
   label, value, sub, icon, color, to,
 }: {
-  label: string; value: string | number; sub?: string
+  label: string; value: string | number | React.ReactNode; sub?: string
   icon: React.ReactNode; color: string; to: string
 }) {
   return (
@@ -23,7 +24,7 @@ function StatCard({
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-2xl font-bold text-surface-900 tabular-nums">{value}</p>
+        <div className="text-2xl font-bold text-surface-900 tabular-nums">{value}</div>
         <p className="text-sm font-medium text-surface-700">{label}</p>
         {sub && <p className="text-xs text-surface-400 mt-0.5 truncate">{sub}</p>}
       </div>
@@ -114,20 +115,32 @@ function NextTripCard({ trip }: { trip: Trip }) {
       <div className="flex items-center justify-between pt-2 border-t border-surface-100 dark:border-slate-800 flex-wrap gap-3">
         <div className="flex items-center gap-4 text-xs">
           <div>
-            <span className="text-surface-400 block">Total Budget</span>
-            <span className="font-bold text-surface-800 dark:text-surface-100 text-sm">
-              {budgetCap > 0 ? formatMoney(budgetCap, trip.currency) : 'Unset'}
-            </span>
+            <span className="text-surface-400 block mb-0.5">Total Budget</span>
+            {budgetCap > 0 ? (
+              <CurrencyAmount
+                amount={budgetCap}
+                currency={trip.currency}
+                isMinor={true}
+                className="font-bold text-surface-800 dark:text-surface-100 text-sm"
+              />
+            ) : (
+              <span className="font-bold text-surface-800 dark:text-surface-100 text-sm">Unset</span>
+            )}
           </div>
           <div className="h-7 w-[1px] bg-surface-200 dark:bg-slate-700" />
           <div>
-            <span className="text-surface-400 block">Budget Remaining</span>
+            <span className="text-surface-400 block mb-0.5">Budget Remaining</span>
             {budgetLoading ? (
               <span className="text-surface-400 text-xs">Calculating…</span>
             ) : remaining !== null ? (
-              <span className={`font-bold text-sm ${isOver ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                {isOver ? `-${formatMoney(Math.abs(remaining), trip.currency)} (Over)` : formatMoney(remaining, trip.currency)}
-              </span>
+              <CurrencyAmount
+                amount={Math.abs(remaining)}
+                currency={trip.currency}
+                isMinor={true}
+                prefix={isOver ? '- ' : ''}
+                suffix={isOver ? ' (Over)' : ''}
+                className={`font-bold text-sm ${isOver ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}
+              />
             ) : (
               <span className="text-surface-500 text-xs">No expenses yet</span>
             )}
@@ -295,7 +308,14 @@ export default function Overview() {
           />
           <StatCard
             label={targetBudgetTrip ? "Trip Budget" : "Budget"}
-            value={targetBudgetTrip ? formatMoney(targetBudgetTrip.budget_minor, targetBudgetTrip.currency) : '—'}
+            value={targetBudgetTrip && targetBudgetTrip.budget_minor > 0 ? (
+              <CurrencyAmount
+                amount={targetBudgetTrip.budget_minor}
+                currency={targetBudgetTrip.currency}
+                isMinor={true}
+                className="text-2xl font-bold text-surface-900 tabular-nums"
+              />
+            ) : '—'}
             sub={targetBudgetTrip ? (trips.length > 1 ? `${targetBudgetTrip.name} · ${trips.length} trips` : targetBudgetTrip.name) : 'No trips yet'}
             icon={<PiggyBank size={20} className="text-emerald-600" />}
             color="bg-emerald-50"

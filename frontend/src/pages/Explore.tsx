@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { MapPin, Clock, DollarSign, Star, ExternalLink, Search, Globe } from 'lucide-react'
+import CurrencyAmount from '../components/CurrencyAmount'
 
 interface Destination {
   name: string
@@ -9,6 +10,9 @@ interface Destination {
   bestFor: string[]
   bestTime: string
   budget: string
+  budgetMin?: number
+  budgetMax?: number
+  currency?: string
   highlights: string[]
   wikiUrl: string
 }
@@ -20,6 +24,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['Beach', 'Food', 'Nightlife', 'History'],
     bestTime: 'Nov – Feb (dry season)',
     budget: '₹3,000 – ₹8,000/day',
+    budgetMin: 3000,
+    budgetMax: 8000,
+    currency: 'INR',
     highlights: ['Baga & Palolem beaches', 'Fort Aguada', 'Dudhsagar Falls', 'Old Goa churches'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Goa',
   },
@@ -29,6 +36,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['Culture', 'Art', 'Food', 'Architecture'],
     bestTime: 'Apr – Jun, Sep – Oct',
     budget: '€80 – €200/day',
+    budgetMin: 80,
+    budgetMax: 200,
+    currency: 'EUR',
     highlights: ['Eiffel Tower', 'Louvre Museum', 'Montmartre', 'Seine River cruises'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Paris',
   },
@@ -38,6 +48,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['Spirituality', 'Nature', 'Surfing', 'Wellness'],
     bestTime: 'Apr – Oct (dry season)',
     budget: '$40 – $120/day',
+    budgetMin: 40,
+    budgetMax: 120,
+    currency: 'USD',
     highlights: ['Ubud Rice Terraces', 'Tanah Lot Temple', 'Mount Batur', 'Seminyak beach'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Bali',
   },
@@ -47,6 +60,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['Culture', 'Food', 'Technology', 'Shopping'],
     bestTime: 'Mar – May (cherry blossom), Oct – Nov',
     budget: '¥8,000 – ¥20,000/day',
+    budgetMin: 8000,
+    budgetMax: 20000,
+    currency: 'JPY',
     highlights: ['Shibuya Crossing', 'Senso-ji Temple', 'Tsukiji Market', 'teamLab Borderless'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Tokyo',
   },
@@ -56,6 +72,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['Architecture', 'Beach', 'Food', 'Nightlife'],
     bestTime: 'May – Jun, Sep – Oct',
     budget: '€60 – €150/day',
+    budgetMin: 60,
+    budgetMax: 150,
+    currency: 'EUR',
     highlights: ['Sagrada Família', 'Park Güell', 'La Boqueria market', 'Camp Nou'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Barcelona',
   },
@@ -65,6 +84,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['History', 'Culture', 'Adventure', 'Photography'],
     bestTime: 'Oct – Mar (cooler and dry)',
     budget: '₹2,500 – ₹7,000/day',
+    budgetMin: 2500,
+    budgetMax: 7000,
+    currency: 'INR',
     highlights: ['Jaipur City Palace', 'Jaisalmer Fort', 'Pushkar camel fair', 'Udaipur lakes'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Rajasthan',
   },
@@ -74,6 +96,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['Family', 'Food', 'Shopping', 'Gardens'],
     bestTime: 'Feb – Apr (less rain)',
     budget: 'SGD 100 – 250/day',
+    budgetMin: 100,
+    budgetMax: 250,
+    currency: 'SGD',
     highlights: ['Gardens by the Bay', 'Marina Bay Sands', 'Hawker centres', 'Sentosa Island'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Singapore',
   },
@@ -83,6 +108,9 @@ const DESTINATIONS: Destination[] = [
     bestFor: ['Romance', 'Photography', 'Wine', 'Beaches'],
     bestTime: 'Apr – Jun, Sep – Oct',
     budget: '€100 – €300/day',
+    budgetMin: 100,
+    budgetMax: 300,
+    currency: 'EUR',
     highlights: ['Oia sunset views', 'Black Sand beaches', 'Fira village', 'caldera boat tours'],
     wikiUrl: 'https://en.wikipedia.org/wiki/Santorini',
   },
@@ -196,7 +224,17 @@ export default function Explore() {
                     <DollarSign size={12} className="mt-0.5 flex-shrink-0" />
                     <div>
                       <div className="font-medium" style={{ color: 'var(--color-text-primary)' }}>Budget</div>
-                      <div>{d.budget}</div>
+                      {d.budgetMin && d.budgetMax && d.currency ? (
+                        <div className="flex flex-col mt-0.5">
+                          <span className="font-semibold text-surface-900 dark:text-slate-100 flex items-baseline gap-1 flex-wrap">
+                            <CurrencyAmount amount={d.budgetMin} currency={d.currency} inline={true} isMinor={false} />
+                            <span>–</span>
+                            <CurrencyAmount amount={d.budgetMax} currency={d.currency} inline={true} isMinor={false} suffix="/day" />
+                          </span>
+                        </div>
+                      ) : (
+                        <div>{d.budget}</div>
+                      )}
                     </div>
                   </div>
                 </div>

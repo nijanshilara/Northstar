@@ -16,6 +16,7 @@ import {
   formatDate, formatTime, formatDuration, formatMoney,
   CATEGORY_CLASSES,
 } from '../utils/format'
+import CurrencyAmount from '../components/CurrencyAmount'
 
 // ── Replan modal ────────────────────────────────────────────────────────────
 
@@ -209,7 +210,13 @@ function ActivityRow({
         <div className="flex flex-wrap gap-3 mt-2 text-xs text-surface-500">
           <span className="flex items-center gap-1"><Clock size={11} /> {formatDuration(activity.duration_minutes)}</span>
           {activity.cost_minor > 0 && (
-            <span className="font-medium text-surface-700">{formatMoney(activity.cost_minor, activity.currency)}</span>
+            <CurrencyAmount
+              amount={activity.cost_minor}
+              currency={activity.currency}
+              isMinor={true}
+              inline={true}
+              className="font-medium text-surface-700 dark:text-slate-200"
+            />
           )}
           {activity.opening_hours && (
             <span className="flex items-center gap-1"><Info size={11} /> {activity.opening_hours}</span>
@@ -301,9 +308,13 @@ function DaySection({
 
         <div className="flex items-center gap-3 flex-shrink-0">
           {totalCost > 0 && (
-            <span className="text-xs font-semibold text-surface-700 dark:text-slate-300">
-              {formatMoney(totalCost, currency)}
-            </span>
+            <CurrencyAmount
+              amount={totalCost}
+              currency={currency}
+              isMinor={true}
+              inline={true}
+              className="text-xs font-semibold text-surface-700 dark:text-slate-300"
+            />
           )}
           <ChevronDown
             size={16}
@@ -528,25 +539,53 @@ function BudgetBar({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="p-3 rounded-xl bg-surface-50 dark:bg-slate-900/40 border border-surface-200 dark:border-slate-700/80">
           <span className="text-[11px] font-medium text-surface-500 dark:text-slate-400 block">Total Budget Cap</span>
-          <p className="text-base font-bold text-surface-900 dark:text-slate-100 mt-0.5" id="total-budget-display">
-            {budgetCap > 0 ? formatMoney(budgetCap, currency) : 'Unset'}
-          </p>
+          <div className="mt-0.5" id="total-budget-display">
+            {budgetCap > 0 ? (
+              <CurrencyAmount
+                amount={budgetCap}
+                currency={currency}
+                isMinor={true}
+                className="text-base font-bold text-surface-900 dark:text-slate-100"
+              />
+            ) : (
+              <span className="text-base font-bold text-surface-900 dark:text-slate-100">Unset</span>
+            )}
+          </div>
           {trip && trip.num_travellers > 1 && budgetCap > 0 && (
-            <span className="text-[11px] text-surface-500 dark:text-slate-400">
-              {formatMoney(Math.round(budgetCap / trip.num_travellers), currency)} / person
-            </span>
+            <div className="mt-0.5">
+              <CurrencyAmount
+                amount={Math.round(budgetCap / trip.num_travellers)}
+                currency={currency}
+                isMinor={true}
+                inline={true}
+                suffix="/ person"
+                className="text-[11px] text-surface-500 dark:text-slate-400 font-normal"
+              />
+            </div>
           )}
         </div>
 
         <div className="p-3 rounded-xl bg-surface-50 dark:bg-slate-900/40 border border-surface-200 dark:border-slate-700/80">
           <span className="text-[11px] font-medium text-surface-500 dark:text-slate-400 block">Estimated Spend</span>
-          <p className="text-base font-bold text-surface-900 dark:text-slate-100 mt-0.5" id="total-spend-display">
-            {formatMoney(budget.total_minor, currency)}
-          </p>
+          <div className="mt-0.5" id="total-spend-display">
+            <CurrencyAmount
+              amount={budget.total_minor}
+              currency={currency}
+              isMinor={true}
+              className="text-base font-bold text-surface-900 dark:text-slate-100"
+            />
+          </div>
           {trip && trip.num_travellers > 1 && (
-            <span className="text-[11px] text-surface-500 dark:text-slate-400">
-              {formatMoney(Math.round(budget.total_minor / trip.num_travellers), currency)} / person
-            </span>
+            <div className="mt-0.5">
+              <CurrencyAmount
+                amount={Math.round(budget.total_minor / trip.num_travellers)}
+                currency={currency}
+                isMinor={true}
+                inline={true}
+                suffix="/ person"
+                className="text-[11px] text-surface-500 dark:text-slate-400 font-normal"
+              />
+            </div>
           )}
         </div>
 
@@ -560,20 +599,27 @@ function BudgetBar({
           <span className="text-[11px] font-medium text-surface-500 dark:text-slate-400 block">
             {isOver ? 'Over Budget By' : budgetCap > 0 ? 'Remaining Balance' : 'Status'}
           </span>
-          <p className={`text-base font-bold mt-0.5 ${
-            isOver
-              ? 'text-red-600 dark:text-red-400'
-              : budgetCap > 0
-                ? 'text-emerald-600 dark:text-emerald-400'
-                : 'text-surface-700 dark:text-slate-300'
-          }`} id="budget-status-display">
-            {isOver
-              ? `+${formatMoney(overAmount, currency)}`
-              : budgetCap > 0
-                ? formatMoney(remaining, currency)
-                : 'Within budget'}
-          </p>
-          <span className="text-[11px] text-surface-500 dark:text-slate-400">
+          <div className="mt-0.5" id="budget-status-display">
+            {isOver ? (
+              <CurrencyAmount
+                amount={overAmount}
+                currency={currency}
+                isMinor={true}
+                prefix="+"
+                className="text-base font-bold text-red-600 dark:text-red-400"
+              />
+            ) : budgetCap > 0 ? (
+              <CurrencyAmount
+                amount={remaining}
+                currency={currency}
+                isMinor={true}
+                className="text-base font-bold text-emerald-600 dark:text-emerald-400"
+              />
+            ) : (
+              <span className="text-base font-bold text-surface-700 dark:text-slate-300">Within budget</span>
+            )}
+          </div>
+          <span className="text-[11px] text-surface-500 dark:text-slate-400 block mt-0.5">
             {budgetCap > 0
               ? `${Math.round(Math.min(100, (budget.total_minor / budgetCap) * 100))}% of budget allocated`
               : 'No cap set'}
@@ -584,7 +630,17 @@ function BudgetBar({
       {/* Actual spend banner if Splitwise expenses exist */}
       {budget.actual_spent_minor && budget.actual_spent_minor > 0 ? (
         <div className="flex items-center justify-between text-xs px-3.5 py-2.5 rounded-xl bg-surface-50 dark:bg-slate-900/40 border border-surface-200 dark:border-slate-700/80 text-surface-600 dark:text-slate-300">
-          <span>Actual Splitwise Expenses: <strong className="text-surface-900 dark:text-slate-100">{formatMoney(budget.actual_spent_minor, currency)}</strong> (recorded spending)</span>
+          <span className="inline-flex items-center gap-1.5 flex-wrap">
+            Actual Splitwise Expenses:
+            <CurrencyAmount
+              amount={budget.actual_spent_minor}
+              currency={currency}
+              isMinor={true}
+              inline={true}
+              className="font-bold text-surface-900 dark:text-slate-100"
+            />
+            (recorded spending)
+          </span>
           <Link to={`/budget?tripId=${trip?.id}`} className="text-accent-600 dark:text-accent-400 hover:underline flex items-center gap-1 font-medium">
             View Budget & Savings <ArrowRight size={12} />
           </Link>
@@ -603,7 +659,13 @@ function BudgetBar({
                   <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${CATEGORY_CLASSES[cat] ?? 'bg-surface-200 text-surface-700'}`}>
                     {cat}
                   </span>
-                  <span className="font-semibold text-surface-800 dark:text-slate-200">{formatMoney(minor, currency)}</span>
+                  <CurrencyAmount
+                    amount={minor}
+                    currency={currency}
+                    isMinor={true}
+                    inline={true}
+                    className="font-semibold text-surface-800 dark:text-slate-200"
+                  />
                   <span className="text-surface-400 text-[10px]">({catPct}%)</span>
                 </div>
               )

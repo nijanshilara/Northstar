@@ -47,9 +47,11 @@ class UserOut(BaseModel):
     name: str
     email: str
     is_verified: bool
-    theme: Optional[str]
-    palette: Optional[str]
-    custom_accent: Optional[str]
+    theme: Optional[str] = None
+    palette: Optional[str] = None
+    custom_accent: Optional[str] = None
+    preferred_currency: Optional[str] = "INR"
+    show_converted_prices: Optional[bool] = True
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -100,6 +102,8 @@ class UpdateProfileRequest(BaseModel):
     theme: Optional[str] = Field(None, pattern=r"^(light|dark|colourful)$")
     palette: Optional[str] = Field(None, pattern=r"^(ocean|sunset|tropical|lavender|rose|forest|custom)$")
     custom_accent: Optional[str] = Field(None, pattern=r"^#[0-9a-fA-F]{6}$")
+    preferred_currency: Optional[str] = Field(None, min_length=3, max_length=3)
+    show_converted_prices: Optional[bool] = None
 
 
 class ChangePasswordRequest(BaseModel):

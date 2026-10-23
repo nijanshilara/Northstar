@@ -34,6 +34,8 @@ class User(Base):
     theme: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)     # light|dark|colourful
     palette: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)   # ocean|sunset|…
     custom_accent: Mapped[Optional[str]] = mapped_column(String(7), nullable=True)  # #rrggbb
+    preferred_currency: Mapped[Optional[str]] = mapped_column(String(3), nullable=True, default="INR")
+    show_converted_prices: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

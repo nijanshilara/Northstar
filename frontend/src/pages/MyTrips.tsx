@@ -9,6 +9,8 @@ import { listTrips, createTrip, deleteTrip, getErrorMessage } from '../services/
 import type { Trip, TripCreate, TravelStyle } from '../types'
 import { formatMoney, formatDate, daysUntil, STATUS_CLASSES } from '../utils/format'
 import DestinationInput from '../components/DestinationInput'
+import CurrencyAmount from '../components/CurrencyAmount'
+import { useCurrency } from '../context/CurrencyContext'
 
 
 // ── Constants ──────────────────────────────────────────────────────────────
@@ -327,8 +329,12 @@ function NewTripModal({
   onClose: () => void
   onCreated: (trip: Trip) => void
 }) {
+  const { preferredCurrency } = useCurrency()
   const [step, setStep] = useState(0)
-  const [form, setForm] = useState<FormData>(defaultForm())
+  const [form, setForm] = useState<FormData>(() => ({
+    ...defaultForm(),
+    currency: preferredCurrency || 'INR',
+  }))
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({})
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -511,8 +517,18 @@ function TripCard({
           className="flex items-center gap-1 hover:text-accent-600 transition-colors"
           title="View or set budget for this trip"
         >
-          <PiggyBank size={12} />
-          {trip.budget_minor > 0 ? formatMoney(trip.budget_minor, trip.currency) : 'Set budget'}
+          <PiggyBank size={12} className="flex-shrink-0" />
+          {trip.budget_minor > 0 ? (
+            <CurrencyAmount
+              amount={trip.budget_minor}
+              currency={trip.currency}
+              isMinor={true}
+              inline={true}
+              className="font-medium text-xs text-surface-600 dark:text-surface-300"
+            />
+          ) : (
+            'Set budget'
+          )}
         </Link>
         <span className="flex items-center gap-1">
           <Compass size={12} />

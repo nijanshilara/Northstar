@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext'
+import { CurrencyProvider } from './context/CurrencyContext'
 import AppLayout from './layouts/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 
@@ -36,39 +37,41 @@ export default function App() {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* ── Public auth routes (no sidebar) ── */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+        <CurrencyProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* ── Public auth routes (no sidebar) ── */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* ── App routes (with sidebar layout) ── */}
-            <Route path="/" element={<AppLayout />}>
-              <Route index element={<Overview />} />
-              <Route path="trips" element={<MyTrips />} />
-              <Route path="explore" element={<Explore />} />
-              <Route path="flights" element={<Flights />} />
-              <Route path="hotels" element={<Hotels />} />
-              <Route path="transport" element={<Transport />} />
-              <Route path="itinerary" element={<Itinerary />} />
-              <Route path="budget" element={<Budget />} />
-              <Route path="weather" element={<Weather />} />
-              <Route path="splitwise" element={<Splitwise />} />
-              <Route path="currency" element={<CurrencyConverter />} />
-              <Route path="ai-assistant" element={<AIAssistant />} />
-              <Route path="safety" element={<Safety />} />
-              <Route path="settings" element={<Settings />} />
+              {/* ── App routes (with sidebar layout) ── */}
+              <Route path="/" element={<AppLayout />}>
+                <Route index element={<Overview />} />
+                <Route path="trips" element={<MyTrips />} />
+                <Route path="explore" element={<Explore />} />
+                <Route path="flights" element={<Flights />} />
+                <Route path="hotels" element={<Hotels />} />
+                <Route path="transport" element={<Transport />} />
+                <Route path="itinerary" element={<Itinerary />} />
+                <Route path="budget" element={<Budget />} />
+                <Route path="weather" element={<Weather />} />
+                <Route path="splitwise" element={<Splitwise />} />
+                <Route path="currency" element={<CurrencyConverter />} />
+                <Route path="ai-assistant" element={<AIAssistant />} />
+                <Route path="safety" element={<Safety />} />
+                <Route path="settings" element={<Settings />} />
 
-              {/* Memory Capsules accessible with guest overview and auth-protected content */}
-              <Route path="capsules" element={<Capsules />} />
-              <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-              <Route path="history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
-            </Route>
-          </Routes>
-        </BrowserRouter>
+                {/* Memory Capsules accessible with guest overview and auth-protected content */}
+                <Route path="capsules" element={<Capsules />} />
+                <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                <Route path="history" element={<ProtectedRoute><HistoryPage /></ProtectedRoute>} />
+              </Route>
+            </Routes>
+          </BrowserRouter>
+        </CurrencyProvider>
       </AuthProvider>
     </ThemeProvider>
   )

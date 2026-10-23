@@ -14,13 +14,13 @@ echo.
 REM Stop port 8000 (Backend)
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :8000 ^| findstr LISTENING') do (
     echo [*] Terminating Backend process on port 8000 (PID: %%a)...
-    taskkill /F /PID %%a >nul 2>&1
+    taskkill /F /T /PID %%a >nul 2>&1
 )
 
 REM Stop port 5173 (Frontend)
 for /f "tokens=5" %%a in ('netstat -aon ^| findstr :5173 ^| findstr LISTENING') do (
     echo [*] Terminating Frontend process on port 5173 (PID: %%a)...
-    taskkill /F /PID %%a >nul 2>&1
+    taskkill /F /T /PID %%a >nul 2>&1
 )
 
 echo.

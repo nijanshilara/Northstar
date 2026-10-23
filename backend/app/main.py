@@ -34,7 +34,19 @@ async def lifespan(app: FastAPI):
             cols = [r[1] for r in res]
             if cols and "is_active" not in cols:
                 conn.execute(text("ALTER TABLE group_members ADD COLUMN is_active BOOLEAN DEFAULT 1"))
-                conn.commit()
+            
+            # Migrate users table for global currency preferences
+            user_cols_res = conn.execute(text("PRAGMA table_info(users)")).fetchall()
+            user_cols = [r[1] for r in user_cols_res]
+            if user_cols and "preferred_currency" not in user_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN preferred_currency VARCHAR(3) DEFAULT 'INR'"))
+            if user_cols and "show_converted_prices" not in user_cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN show_converted_prices BOOLEAN DEFAULT 1"))
+            # Ensure any existing users with null preferred_currency default to 'INR'
+            if user_cols:
+                conn.execute(text("UPDATE users SET preferred_currency = 'INR' WHERE preferred_currency IS NULL"))
+                conn.execute(text("UPDATE users SET show_converted_prices = 1 WHERE show_converted_prices IS NULL"))
+            conn.commit()
     except Exception:
         pass
     yield

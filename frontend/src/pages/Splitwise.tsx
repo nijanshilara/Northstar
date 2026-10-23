@@ -12,6 +12,8 @@ import {
 } from '../services/api'
 import type { ExpenseGroup, Expense, SettlementPlan, GroupMember, SplitMethod, Trip } from '../types'
 import { formatMoney, formatDate } from '../utils/format'
+import CurrencyAmount from '../components/CurrencyAmount'
+import { useCurrency } from '../context/CurrencyContext'
 
 // ── Expense category options ───────────────────────────────────────────────
 
@@ -28,8 +30,9 @@ function CreateGroupModal({
   onClose: () => void
   onCreated: (g: ExpenseGroup) => void
 }) {
+  const { preferredCurrency } = useCurrency()
   const [name, setName] = useState('')
-  const [currency, setCurrency] = useState('INR')
+  const [currency, setCurrency] = useState(preferredCurrency || 'INR')
   const [trips, setTrips] = useState<Trip[]>([])
   const [selectedTripId, setSelectedTripId] = useState<number | null>(null)
   const [members, setMembers] = useState<string[]>(['', ''])
@@ -1482,15 +1485,29 @@ function GroupPanel({
         <div className="grid grid-cols-2 gap-3">
           <div className="p-3.5 rounded-xl bg-surface-50 dark:bg-slate-800/60 border border-surface-200 dark:border-surface-700">
             <p className="text-xs text-surface-500 dark:text-slate-400">Total Group Spending</p>
-            <p className="text-lg font-bold text-surface-900 dark:text-slate-100">{formatMoney(totalSpent, currency)}</p>
+            <div className="mt-0.5">
+              <CurrencyAmount
+                amount={totalSpent}
+                currency={currency}
+                isMinor={true}
+                className="text-lg font-bold text-surface-900 dark:text-slate-100"
+              />
+            </div>
           </div>
           <div className="p-3.5 rounded-xl bg-surface-50 dark:bg-slate-800/60 border border-surface-200 dark:border-surface-700">
             <p className="text-xs text-surface-500 dark:text-slate-400">Average Per Person</p>
-            <p className="text-lg font-bold text-surface-900 dark:text-slate-100">
-              {activeMembers.length > 0
-                ? formatMoney(Math.round(totalSpent / activeMembers.length), currency)
-                : '—'}
-            </p>
+            <div className="mt-0.5">
+              {activeMembers.length > 0 ? (
+                <CurrencyAmount
+                  amount={Math.round(totalSpent / activeMembers.length)}
+                  currency={currency}
+                  isMinor={true}
+                  className="text-lg font-bold text-surface-900 dark:text-slate-100"
+                />
+              ) : (
+                <span className="text-lg font-bold text-surface-900 dark:text-slate-100">—</span>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -1573,13 +1590,23 @@ function GroupPanel({
 
                   <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="text-right">
-                      <p className="text-sm font-bold text-surface-900 dark:text-slate-100">
-                        {formatMoney(exp.amount_minor, exp.currency)}
-                      </p>
+                      <CurrencyAmount
+                        amount={exp.amount_minor}
+                        currency={exp.currency}
+                        isMinor={true}
+                        className="text-sm font-bold text-surface-900 dark:text-slate-100"
+                      />
                       {!isSettlement && (
-                        <p className="text-[10px] text-surface-400">
-                          {formatMoney(Math.round(exp.amount_minor / participantCount), exp.currency)} / person
-                        </p>
+                        <div className="mt-0.5">
+                          <CurrencyAmount
+                            amount={Math.round(exp.amount_minor / participantCount)}
+                            currency={exp.currency}
+                            isMinor={true}
+                            inline={true}
+                            suffix="/ person"
+                            className="text-[10px] text-surface-400 font-normal"
+                          />
+                        </div>
                       )}
                     </div>
 
@@ -1610,15 +1637,29 @@ function GroupPanel({
                 <div key={b.member_id} className="flex items-center justify-between p-3 rounded-xl border border-surface-100 dark:border-surface-700 bg-white dark:bg-slate-800/40" id={`balance-${b.member_id}`}>
                   <div>
                     <p className="text-sm font-semibold text-surface-900 dark:text-slate-100">{b.member_name}</p>
-                    <p className="text-xs text-surface-500 dark:text-slate-400">
-                      Paid {formatMoney(b.total_paid_minor, currency)} · Owes {formatMoney(b.total_owed_minor, currency)}
+                    <p className="text-xs text-surface-500 dark:text-slate-400 flex items-center gap-1 flex-wrap mt-0.5">
+                      <span>Paid</span>
+                      <CurrencyAmount amount={b.total_paid_minor} currency={currency} isMinor={true} inline={true} className="font-semibold text-surface-700 dark:text-slate-200" />
+                      <span>· Owes</span>
+                      <CurrencyAmount amount={b.total_owed_minor} currency={currency} isMinor={true} inline={true} className="font-semibold text-surface-700 dark:text-slate-200" />
                     </p>
                   </div>
                   <div className="text-right">
-                    <div className={`flex items-center gap-1 text-sm font-bold
+                    <div className={`flex items-center gap-1 text-sm font-bold justify-end
                       ${isZero ? 'text-surface-500 dark:text-slate-400' : isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400'}`}>
                       {!isZero && (isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />)}
-                      {isZero ? 'Settled' : (isPositive ? '+' : '') + formatMoney(b.net_minor, currency)}
+                      {isZero ? (
+                        'Settled'
+                      ) : (
+                        <CurrencyAmount
+                          amount={Math.abs(b.net_minor)}
+                          currency={currency}
+                          isMinor={true}
+                          prefix={isPositive ? '+ ' : '- '}
+                          inline={true}
+                          className={isPositive ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-red-500 dark:text-red-400 font-bold'}
+                        />
+                      )}
                     </div>
                     <p className="text-[11px] text-surface-400">
                       {isZero ? 'Zero balance' : isPositive ? 'gets back' : 'owes group'}
@@ -1648,9 +1689,12 @@ function GroupPanel({
                     <span className="font-semibold text-surface-800 dark:text-slate-100">{s.to_member_name}</span>
                   </div>
                   <div className="flex items-center gap-2.5 flex-shrink-0">
-                    <span className="font-bold text-sm text-accent-700 dark:text-teal-300">
-                      {formatMoney(s.amount_minor, s.currency)}
-                    </span>
+                    <CurrencyAmount
+                      amount={s.amount_minor}
+                      currency={s.currency}
+                      isMinor={true}
+                      className="font-bold text-sm text-accent-700 dark:text-teal-300"
+                    />
                     <button
                       type="button"
                       onClick={() => {

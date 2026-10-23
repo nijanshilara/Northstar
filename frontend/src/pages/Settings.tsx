@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Sun, Moon, Palette as PaletteIcon, Check, Droplets,
   CloudSun, Bot, Plane, Hotel, Database, RefreshCw,
-  CheckCircle2, AlertTriangle, Key, ShieldCheck, Navigation
+  CheckCircle2, AlertTriangle, Key, ShieldCheck, Navigation,
+  Coins, ExternalLink
 } from 'lucide-react'
 import { useTheme, type Theme, type Palette } from '../context/ThemeContext'
+import { useCurrency, POPULAR_CURRENCIES, SUPPORTED_CURRENCIES } from '../context/CurrencyContext'
+import CurrencyAmount from '../components/CurrencyAmount'
 import { getIntegrationsStatus } from '../services/api'
 import type { IntegrationsStatus } from '../types'
 
@@ -148,6 +152,7 @@ const PALETTE_OPTIONS: PaletteOption[] = [
 
 export default function Settings() {
   const { theme, setTheme, palette, setPalette, customAccent, setCustomAccent } = useTheme()
+  const { preferredCurrency, setPreferredCurrency, showConvertedPrices, setShowConvertedPrices } = useCurrency()
   const [integrations, setIntegrations] = useState<IntegrationsStatus | null>(null)
   const [loadingIntegrations, setLoadingIntegrations] = useState(false)
 
@@ -319,6 +324,30 @@ export default function Settings() {
             <p className="text-xs text-surface-700 dark:text-slate-200 leading-relaxed">
               Real local persistence. User accounts, custom trips, itineraries, capsules, and expenses persist in <code className="bg-surface-200 dark:bg-slate-700 px-1 py-0.5 rounded text-xs font-mono">travel_guide.db</code>.
             </p>
+          </div>
+
+          {/* Currency Rates */}
+          <div className="p-4 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-slate-800/60 flex flex-col justify-between gap-2.5 shadow-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Coins size={18} className="text-amber-500" />
+                <span className="font-semibold text-sm text-surface-900 dark:text-slate-100">Currency Converter</span>
+              </div>
+              <span className="badge badge-success text-xs font-semibold px-2.5 py-0.5">
+                Connected · ECB
+              </span>
+            </div>
+            <p className="text-xs text-surface-700 dark:text-slate-200 leading-relaxed">
+              Real-time European Central Bank rates via Frankfurter API. Hourly updates cached locally for instant inline price conversions.
+            </p>
+            <div className="pt-1">
+              <Link
+                to="/currency"
+                className="text-xs font-medium text-accent-600 dark:text-accent-400 hover:underline inline-flex items-center gap-1"
+              >
+                Open Currency Converter <ExternalLink size={11} />
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -500,12 +529,98 @@ export default function Settings() {
         </div>
       </section>
 
-      {/* ── General Preferences (placeholder) ──────────────────────────────── */}
-      <section className="card space-y-3" aria-labelledby="prefs-heading">
-        <h2 id="prefs-heading" className="section-heading">General Preferences</h2>
-        <p className="section-subtext">
-          Account, notification, and travel preferences will be configurable here in a future phase.
-        </p>
+      {/* ── Global Currency & Price Display ──────────────────────────────── */}
+      <section className="card space-y-4" aria-labelledby="currency-heading" id="currency-preferences-section">
+        <div className="flex items-center justify-between pb-3 border-b border-surface-100 dark:border-surface-700">
+          <div>
+            <h2 id="currency-heading" className="section-heading flex items-center gap-2">
+              <Coins size={18} className="text-accent-600" />
+              Global Currency & Price Display
+            </h2>
+            <p className="section-subtext">
+              Set your preferred currency for automatic inline price conversions across trips, itineraries, budgets, and expenses.
+            </p>
+          </div>
+          <Link
+            to="/profile?tab=preferences"
+            className="text-xs font-medium text-accent-600 hover:underline"
+          >
+            Manage in Profile →
+          </Link>
+        </div>
+
+        <div className="space-y-4">
+          {/* Preferred Currency Select */}
+          <div className="space-y-1.5">
+            <label htmlFor="settings-preferred-currency" className="label font-medium text-xs">
+              Preferred Currency
+            </label>
+            <div className="flex items-center gap-3 flex-wrap">
+              <select
+                id="settings-preferred-currency"
+                value={preferredCurrency}
+                onChange={e => setPreferredCurrency(e.target.value)}
+                className="input max-w-xs text-sm font-semibold cursor-pointer"
+              >
+                <optgroup label="Popular Currencies">
+                  {POPULAR_CURRENCIES.map(code => {
+                    const item = SUPPORTED_CURRENCIES.find(c => c.code === code)
+                    return (
+                      <option key={`pop-${code}`} value={code}>
+                        {code} — {item?.name || code} ({item?.symbol || code})
+                      </option>
+                    )
+                  })}
+                </optgroup>
+                <optgroup label="All Supported Currencies">
+                  {SUPPORTED_CURRENCIES.filter(c => !POPULAR_CURRENCIES.includes(c.code)).map(c => (
+                    <option key={c.code} value={c.code}>
+                      {c.code} — {c.name} ({c.symbol})
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+
+              <span className="text-xs text-surface-400">
+                Default: <strong>INR (₹)</strong>
+              </span>
+            </div>
+          </div>
+
+          {/* Inline Equivalent Toggle */}
+          <div className="p-3.5 rounded-xl border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-slate-800/60 space-y-2">
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                id="settings-toggle-converted-prices"
+                checked={showConvertedPrices}
+                onChange={e => setShowConvertedPrices(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded border-surface-300 text-accent-600 focus:ring-accent-500 cursor-pointer"
+              />
+              <div>
+                <span className="text-xs font-semibold text-surface-900 dark:text-slate-100 block">
+                  Show equivalent prices in my preferred currency
+                </span>
+                <span className="text-[11px] text-surface-500 dark:text-slate-400 leading-normal block mt-0.5">
+                  When viewing items priced in foreign currencies (e.g. €120), displays the converted amount (≈ ₹12,750 INR) underneath. Enabled by default.
+                </span>
+              </div>
+            </label>
+          </div>
+
+          {/* Interactive Live Preview */}
+          <div className="p-3 rounded-xl border border-surface-100 dark:border-surface-700/80 bg-white dark:bg-slate-900/40 text-xs flex items-center justify-between gap-4">
+            <span className="text-surface-500 dark:text-slate-400">Live Preview:</span>
+            <div className="text-right">
+              <CurrencyAmount
+                amount={120}
+                currency="EUR"
+                isMinor={false}
+                className="font-bold text-sm text-surface-900 dark:text-slate-100"
+              />
+            </div>
+          </div>
+        </div>
       </section>
     </div>
   )

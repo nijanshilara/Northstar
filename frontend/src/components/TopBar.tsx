@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { Menu, Compass, LogOut, UserCircle, LogIn, ChevronDown, History } from 'lucide-react'
+import { Menu, Compass, LogOut, UserCircle, LogIn, ChevronDown, History, ArrowLeftRight } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useCurrency } from '../context/CurrencyContext'
 
 type TopBarProps = {
   onMenuToggle: () => void
@@ -12,6 +13,7 @@ type TopBarProps = {
 
 export default function TopBar({ onMenuToggle, isDemoMode, overallMode = 'hybrid' }: TopBarProps) {
   const { user, isAuthenticated, logout } = useAuth()
+  const { preferredCurrency } = useCurrency()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuPos, setMenuPos] = useState<{ top: number; right: number }>({ top: 0, right: 0 })
@@ -111,6 +113,17 @@ export default function TopBar({ onMenuToggle, isDemoMode, overallMode = 'hybrid
           <span className="badge-demo">Demo Mode</span>
         ) : null}
 
+        {/* Preferred Currency Quick Indicator */}
+        <Link
+          to="/currency"
+          className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-surface-100 dark:bg-slate-800 text-surface-700 dark:text-slate-200 border border-surface-200 dark:border-slate-700 hover:border-accent-500 hover:text-accent-600 transition-colors"
+          title={`Preferred Currency: ${preferredCurrency}. Click to open Currency Converter.`}
+          id="topbar-currency-badge"
+        >
+          <ArrowLeftRight size={12} className="text-accent-500" />
+          <span className="font-mono">{preferredCurrency}</span>
+        </Link>
+
         {/* Authenticated: user menu */}
         {isAuthenticated && user ? (
           <div className="relative">
@@ -173,6 +186,22 @@ export default function TopBar({ onMenuToggle, isDemoMode, overallMode = 'hybrid
                   >
                     <UserCircle size={16} className="text-accent-600 dark:text-accent-400" />
                     Account & Profile
+                  </Link>
+
+                  <Link
+                    to="/currency"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center justify-between px-4 py-2 text-sm font-medium transition-colors hover:bg-surface-100 dark:hover:bg-slate-700"
+                    style={{ color: 'var(--color-text-primary)' }}
+                    role="menuitem"
+                  >
+                    <span className="flex items-center gap-2.5">
+                      <ArrowLeftRight size={16} className="text-accent-600 dark:text-accent-400" />
+                      Currency Converter
+                    </span>
+                    <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-surface-100 dark:bg-slate-800 text-accent-600 dark:text-accent-400">
+                      {preferredCurrency}
+                    </span>
                   </Link>
 
                   <Link

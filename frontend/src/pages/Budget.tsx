@@ -8,6 +8,7 @@ import {
 import { listTrips, updateTrip, getItineraryBudget, type BudgetBreakdown } from '../services/api'
 import type { Trip } from '../types'
 import { formatMoney } from '../utils/format'
+import CurrencyAmount from '../components/CurrencyAmount'
 import { computeBudgetMetrics, validateBudgetInput } from '../utils/budgetUtils'
 
 interface BudgetItem {
@@ -335,7 +336,14 @@ export default function Budget() {
               <span className="text-surface-500 dark:text-slate-400 flex items-center gap-1">
                 <Users size={13} className="text-accent-500" />
                 {selectedTrip.num_travellers} travellers (
-                {formatMoney(Math.round(selectedTrip.budget_minor / selectedTrip.num_travellers), tripCurrency)}/person)
+                <CurrencyAmount
+                  amount={Math.round(selectedTrip.budget_minor / selectedTrip.num_travellers)}
+                  currency={tripCurrency}
+                  isMinor={true}
+                  inline={true}
+                  suffix="/person"
+                  className="font-medium text-xs text-surface-600 dark:text-slate-300"
+                />)
               </span>
             )}
           </div>
@@ -363,9 +371,14 @@ export default function Budget() {
               </div>
               <div>
                 <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>Total Budget Cap</p>
-                <p className="text-lg font-bold text-blue-600 dark:text-blue-400" id="total-budget-cap-display">
-                  {formatMoney(tripBudgetCapMinor, tripCurrency)}
-                </p>
+                <div id="total-budget-cap-display">
+                  <CurrencyAmount
+                    amount={tripBudgetCapMinor}
+                    currency={tripCurrency}
+                    isMinor={true}
+                    className="text-lg font-bold text-blue-600 dark:text-blue-400"
+                  />
+                </div>
               </div>
             </div>
             <button
@@ -393,9 +406,14 @@ export default function Budget() {
             </div>
             <div>
               <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>Estimated Costs</p>
-              <p className="text-lg font-bold text-purple-600 dark:text-purple-400" id="estimated-costs-display">
-                {formatMoney(totalPlannedMinor, tripCurrency)}
-              </p>
+              <div id="estimated-costs-display">
+                <CurrencyAmount
+                  amount={totalPlannedMinor}
+                  currency={tripCurrency}
+                  isMinor={true}
+                  className="text-lg font-bold text-purple-600 dark:text-purple-400"
+                />
+              </div>
             </div>
           </div>
           <span className="text-[10px] text-surface-400 dark:text-slate-500 mt-2">
@@ -417,9 +435,14 @@ export default function Budget() {
             </div>
             <div>
               <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>Actual Spent</p>
-              <p className="text-lg font-bold" style={{ color: actualColor }} id="actual-spent-display">
-                {formatMoney(totalActualMinor, tripCurrency)}
-              </p>
+              <div id="actual-spent-display">
+                <CurrencyAmount
+                  amount={totalActualMinor}
+                  currency={tripCurrency}
+                  isMinor={true}
+                  className="text-lg font-bold"
+                />
+              </div>
             </div>
           </div>
           <span className="text-[10px] text-surface-400 dark:text-slate-500 mt-2">
@@ -445,11 +468,17 @@ export default function Budget() {
               <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
                 {isOverActual ? 'Over Actual Budget' : 'Remaining (Actual)'}
               </p>
-              <p className={`text-lg font-bold ${
-                isOverActual ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
-              }`} id="remaining-actual-display">
-                {isOverActual ? `+${formatMoney(overActualAmountMinor, tripCurrency)}` : formatMoney(remainingActualMinor, tripCurrency)}
-              </p>
+              <div id="remaining-actual-display">
+                <CurrencyAmount
+                  amount={isOverActual ? overActualAmountMinor : remainingActualMinor}
+                  currency={tripCurrency}
+                  isMinor={true}
+                  prefix={isOverActual ? '+ ' : ''}
+                  className={`text-lg font-bold ${
+                    isOverActual ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+                  }`}
+                />
+              </div>
             </div>
           </div>
           <span className="text-[10px] text-surface-400 dark:text-slate-500 mt-2">
@@ -475,11 +504,17 @@ export default function Budget() {
               <p className="text-[11px] font-medium" style={{ color: 'var(--color-text-muted)' }}>
                 {isOverPlanned ? 'Over Planned Cap' : 'Remaining (Estimated)'}
               </p>
-              <p className={`text-lg font-bold ${
-                isOverPlanned ? 'text-amber-700 dark:text-amber-400' : 'text-indigo-600 dark:text-indigo-400'
-              }`} id="remaining-estimated-display">
-                {isOverPlanned ? `+${formatMoney(overPlannedAmountMinor, tripCurrency)}` : formatMoney(remainingPlannedMinor, tripCurrency)}
-              </p>
+              <div id="remaining-estimated-display">
+                <CurrencyAmount
+                  amount={isOverPlanned ? overPlannedAmountMinor : remainingPlannedMinor}
+                  currency={tripCurrency}
+                  isMinor={true}
+                  prefix={isOverPlanned ? '+ ' : ''}
+                  className={`text-lg font-bold ${
+                    isOverPlanned ? 'text-amber-700 dark:text-amber-400' : 'text-indigo-600 dark:text-indigo-400'
+                  }`}
+                />
+              </div>
             </div>
           </div>
           <span className="text-[10px] text-surface-400 dark:text-slate-500 mt-2">
@@ -700,8 +735,9 @@ export default function Budget() {
                 <div key={cat}>
                   <div className="flex justify-between text-xs mb-1" style={{ color: 'var(--color-text-secondary)' }}>
                     <span className="capitalize">{cat}</span>
-                    <span className="font-medium">
-                      {formatMoney(minor, tripCurrency)} ({catPct}%)
+                    <span className="font-medium inline-flex items-center gap-1">
+                      <CurrencyAmount amount={minor} currency={tripCurrency} isMinor={true} inline={true} />
+                      <span>({catPct}%)</span>
                     </span>
                   </div>
                   <div className="h-2 rounded-full overflow-hidden" style={{ background: 'var(--color-border)' }}>

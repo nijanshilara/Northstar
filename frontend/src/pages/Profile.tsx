@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { User, Mail, Lock, Trash2, CheckCircle, AlertCircle, Shield } from 'lucide-react'
+import { User, Mail, Lock, Trash2, CheckCircle, AlertCircle, Shield, Coins, Sparkles } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useCurrency } from '../context/CurrencyContext'
 import { authApi, getAuthError } from '../services/authApi'
 import { useNavigate } from 'react-router-dom'
+import CurrencyAmount from '../components/CurrencyAmount'
 
-type Section = 'profile' | 'password' | 'danger'
+type Section = 'profile' | 'preferences' | 'password' | 'danger'
 
 export default function Profile() {
   const { user, updateUser, logout } = useAuth()
@@ -73,8 +75,46 @@ export default function Profile() {
     }
   }
 
+  // --- Currency preferences form ---
+  const {
+    preferredCurrency,
+    setPreferredCurrency,
+    showConvertedPrices,
+    setShowConvertedPrices,
+    supportedCurrencies,
+    popularCurrencies,
+  } = useCurrency()
+
+  const [selectedCurrency, setSelectedCurrency] = useState(user?.preferred_currency || preferredCurrency || 'INR')
+  const [showConvertedToggle, setShowConvertedToggle] = useState(
+    typeof user?.show_converted_prices === 'boolean' ? user.show_converted_prices : showConvertedPrices
+  )
+  const [prefSaving, setPrefSaving] = useState(false)
+  const [prefMsg, setPrefMsg] = useState<{ type: 'ok' | 'err'; text: string } | null>(null)
+
+  const savePreferences = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setPrefMsg(null)
+    setPrefSaving(true)
+    try {
+      const updated = await authApi.updateProfile({
+        preferred_currency: selectedCurrency,
+        show_converted_prices: showConvertedToggle,
+      })
+      updateUser(updated)
+      await setPreferredCurrency(selectedCurrency)
+      await setShowConvertedPrices(showConvertedToggle)
+      setPrefMsg({ type: 'ok', text: 'Currency preferences saved successfully.' })
+    } catch (err) {
+      setPrefMsg({ type: 'err', text: getAuthError(err) })
+    } finally {
+      setPrefSaving(false)
+    }
+  }
+
   const tabs: { id: Section; label: string; icon: React.ReactNode }[] = [
     { id: 'profile', label: 'Profile', icon: <User size={16} /> },
+    { id: 'preferences', label: 'Preferences', icon: <Coins size={16} /> },
     { id: 'password', label: 'Password', icon: <Lock size={16} /> },
     { id: 'danger', label: 'Danger zone', icon: <Trash2 size={16} /> },
   ]
@@ -180,6 +220,124 @@ export default function Profile() {
               {profileSaving
                 ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                 : 'Save changes'}
+            </button>
+          </form>
+        </div>
+      )}
+
+      {/* Preferences section — Global Currency */}
+      {section === 'preferences' && (
+        <div className="card space-y-6">
+          <div>
+            <h2 className="font-semibold text-lg text-surface-900 dark:text-white flex items-center gap-2">
+              <Coins className="text-accent-500" size={20} />
+              Currency & Price Preferences
+            </h2>
+            <p className="text-sm text-surface-500 dark:text-surface-400 mt-1">
+              Set your default currency for automatic inline price conversions across trips, itineraries, flights, and expenses.
+            </p>
+          </div>
+
+          {prefMsg && (
+            <div className={`flex items-start gap-2 rounded-lg p-3 text-sm ${
+              prefMsg.type === 'ok'
+                ? 'bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300'
+                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300'
+            }`}>
+              {prefMsg.type === 'ok' ? <CheckCircle size={16} className="flex-shrink-0 mt-0.5" /> : <AlertCircle size={16} className="flex-shrink-0 mt-0.5" />}
+              {prefMsg.text}
+            </div>
+          )}
+
+          <form onSubmit={savePreferences} className="space-y-6">
+            {/* Preferred Currency select */}
+            <div>
+              <label htmlFor="pref-currency-select" className="form-label">
+                Preferred Currency
+              </label>
+              <select
+                id="pref-currency-select"
+                value={selectedCurrency}
+                onChange={e => setSelectedCurrency(e.target.value)}
+                className="form-input font-medium"
+              >
+                <optgroup label="Popular Currencies">
+                  {popularCurrencies.map(code => {
+                    const item = supportedCurrencies.find(c => c.code === code)
+                    return (
+                      <option key={`pop-${code}`} value={code}>
+                        {code} — {item?.name || code} ({item?.symbol || code})
+                      </option>
+                    )
+                  })}
+                </optgroup>
+                <optgroup label="All Supported Currencies">
+                  {supportedCurrencies
+                    .filter(c => !popularCurrencies.includes(c.code))
+                    .map(item => (
+                      <option key={item.code} value={item.code}>
+                        {item.code} — {item.name} ({item.symbol})
+                      </option>
+                    ))}
+                </optgroup>
+              </select>
+              <p className="text-xs text-surface-400 dark:text-surface-500 mt-1.5">
+                Default currency used for converting foreign prices. Defaults to INR for Indian travelers.
+              </p>
+            </div>
+
+            {/* Toggle: Show equivalent prices */}
+            <div className="rounded-xl border border-surface-200 dark:border-surface-700 p-4 bg-surface-50 dark:bg-surface-800/60 space-y-2">
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <input
+                  id="pref-show-converted-toggle"
+                  type="checkbox"
+                  checked={showConvertedToggle}
+                  onChange={e => setShowConvertedToggle(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-surface-300 text-accent-600 focus:ring-accent-500"
+                />
+                <div className="space-y-0.5">
+                  <span className="text-sm font-semibold text-surface-900 dark:text-white block">
+                    Show equivalent prices in my preferred currency
+                  </span>
+                  <span className="text-xs text-surface-500 dark:text-surface-400 block leading-relaxed">
+                    Whenever an amount is quoted in a different currency (e.g. €120 in Rome), Northstar displays the converted equivalent in {selectedCurrency} underneath.
+                  </span>
+                </div>
+              </label>
+            </div>
+
+            {/* Live Interactive Preview */}
+            <div className="rounded-xl border border-surface-200 dark:border-surface-700 p-4 bg-white dark:bg-surface-900/50 space-y-2">
+              <span className="text-xs font-semibold text-surface-500 dark:text-surface-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles size={13} className="text-accent-500" />
+                Live Preview
+              </span>
+              <div className="p-3 bg-surface-50 dark:bg-surface-800 rounded-lg flex items-center justify-between">
+                <div>
+                  <span className="text-xs text-surface-400 block">Colosseum Guided Tour (Rome)</span>
+                  <CurrencyAmount
+                    amount={120}
+                    currency={selectedCurrency === 'EUR' ? 'USD' : 'EUR'}
+                    className="text-base font-bold"
+                  />
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-surface-400 block">Hover or tap price</span>
+                  <span className="text-xs text-accent-600 dark:text-accent-400 font-medium">Try clicking the amount ➔</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              id="save-preferences-btn"
+              type="submit"
+              disabled={prefSaving}
+              className="btn-primary flex items-center gap-2"
+            >
+              {prefSaving
+                ? <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                : 'Save preferences'}
             </button>
           </form>
         </div>

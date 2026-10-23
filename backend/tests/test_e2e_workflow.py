@@ -15,6 +15,7 @@ Covers:
 """
 
 from datetime import date, timedelta
+from unittest.mock import patch
 from starlette.testclient import TestClient
 from app.main import app
 
@@ -179,14 +180,24 @@ def test_complete_end_to_end_demonstration_workflow():
         assert ai_status.status_code == 200
         assert "provider" in ai_status.json()
 
-        chat_resp = client.post(
-            "/api/ai/chat",
-            json={"message": "What is the best time to visit Goa?", "context": "Trip to Goa, India"},
-        )
-        assert chat_resp.status_code == 200
-        chat_data = chat_resp.json()
-        assert "reply" in chat_data
-        assert len(chat_data["reply"]) > 0
+        with patch("app.api.ai_chat.generate_text", return_value={
+            "text": "The best time to visit Goa is between November and February.",
+            "is_ai": True,
+            "provider": "gemini",
+            "model": "gemini-2.0-flash",
+            "is_fallback": False,
+            "is_complete": True,
+            "finish_reason": "stop",
+            "error": None,
+        }):
+            chat_resp = client.post(
+                "/api/ai/chat",
+                json={"message": "What is the best time to visit Goa?", "context": "Trip to Goa, India"},
+            )
+            assert chat_resp.status_code == 200
+            chat_data = chat_resp.json()
+            assert "reply" in chat_data
+            assert len(chat_data["reply"]) > 0
 
         # -------------------------------------------------------------------------
         # 9. Session Persistence: Logout and verify re-auth

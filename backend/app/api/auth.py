@@ -41,6 +41,7 @@ from app.schemas.auth_schemas import (
 )
 from app.services import auth_service
 from app.core.security import decode_token
+from app.core.email import _is_smtp_configured
 
 router = APIRouter()
 
@@ -137,12 +138,13 @@ def register(
     user, email_result = auth_service.register_user(db, data)
     access, refresh = auth_service.create_tokens(user)
     _set_auth_cookies(response, access, refresh)
+    dev_mode = bool(email_result.get("dev_mode", False) and not _is_smtp_configured())
     result = {
         "message": "Account created. Please check your email to verify your address.",
         "user": UserOut.model_validate(user).model_dump(),
-        "email_dev_mode": email_result.get("dev_mode", False),
+        "email_dev_mode": dev_mode,
     }
-    if email_result.get("dev_mode") and email_result.get("token"):
+    if dev_mode and email_result.get("token"):
         # Expose token in response ONLY in dev mode so devs can test without SMTP
         result["dev_verification_token"] = email_result["token"]
     return result
@@ -220,8 +222,9 @@ def resend_verify(
     db: Session = Depends(get_db),
 ):
     result = auth_service.resend_verification(db, current_user)
-    resp = {"message": "Verification email resent.", "email_dev_mode": result.get("dev_mode", False)}
-    if result.get("dev_mode") and result.get("token"):
+    dev_mode = bool(result.get("dev_mode", False) and not _is_smtp_configured())
+    resp = {"message": "Verification email resent.", "email_dev_mode": dev_mode}
+    if dev_mode and result.get("token"):
         resp["dev_verification_token"] = result["token"]
     return resp
 

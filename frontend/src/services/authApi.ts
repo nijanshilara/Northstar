@@ -24,6 +24,8 @@ export interface User {
   theme: string | null
   palette: string | null
   custom_accent: string | null
+  preferred_currency?: string | null
+  show_converted_prices?: boolean | null
   created_at: string
 }
 
@@ -94,7 +96,14 @@ export const authApi = {
     return r.data
   },
 
-  updateProfile: async (data: { name?: string; theme?: string; palette?: string; custom_accent?: string }) => {
+  updateProfile: async (data: {
+    name?: string
+    theme?: string
+    palette?: string
+    custom_accent?: string
+    preferred_currency?: string
+    show_converted_prices?: boolean
+  }) => {
     const r = await api.patch<User>('/auth/profile', data)
     return r.data
   },

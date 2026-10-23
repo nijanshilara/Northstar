@@ -4,6 +4,7 @@ password reset and profile management.  No logic lives in the router.
 """
 
 from __future__ import annotations
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -14,7 +15,9 @@ from fastapi import HTTPException, status
 from app.models.user import User, EmailVerificationToken, PasswordResetToken, SearchHistory
 from app.schemas.auth_schemas import RegisterRequest, UpdateProfileRequest
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token
-from app.core.email import send_verification_email, send_password_reset_email
+from app.core.email import send_verification_email, send_password_reset_email, _is_smtp_configured
+
+logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
@@ -194,11 +197,13 @@ def initiate_password_reset(db: Session, email: str) -> dict:
 
     try:
         result = send_password_reset_email(user.email, token_str)
-    except Exception:
-        # Don't expose the failure to the caller
+    except Exception as exc:
+        # Securely log failure without exposing passwords, keys, or sensitive credentials
+        logger.error("Failed to dispatch password reset email to user_id=%s: %s", user.id, exc)
         return GENERIC
 
-    if result.get("dev_mode"):
+    # Tokens are strictly NEVER returned to the frontend when SMTP is enabled
+    if result.get("dev_mode") and not _is_smtp_configured():
         return {**GENERIC, "dev_token": result["token"]}
     return GENERIC
 
@@ -231,6 +236,10 @@ def update_profile(db: Session, user: User, data: UpdateProfileRequest) -> User:
         user.palette = data.palette
     if data.custom_accent is not None:
         user.custom_accent = data.custom_accent
+    if data.preferred_currency is not None:
+        user.preferred_currency = data.preferred_currency.upper().strip()
+    if data.show_converted_prices is not None:
+        user.show_converted_prices = data.show_converted_prices
     db.commit()
     db.refresh(user)
     return user
